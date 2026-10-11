@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 const WhoAmI = () => {
   return (
-    <section id="whoami" className="min-h-screen flex items-center bg-secondary relative py-32 border-t border-white/5">
+    <section id="whoami" className="min-h-screen flex items-center bg-secondary relative py-32">
       <div className="max-w-5xl mx-auto px-6 w-full relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 50 }}

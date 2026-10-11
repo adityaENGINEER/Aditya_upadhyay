@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 const MyMindset = () => {
   return (
-    <section id="mindset" className="min-h-[90vh] flex items-center bg-secondary relative py-32 border-t border-white/5 overflow-hidden">
+    <section id="mindset" className="min-h-[90vh] flex items-center bg-secondary relative py-32 overflow-hidden">
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-thread-light.png')] opacity-[0.05]"></div>
       
       <div className="max-w-5xl mx-auto px-6 w-full relative z-10 text-center">

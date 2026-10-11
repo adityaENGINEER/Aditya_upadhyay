@@ -13,7 +13,7 @@ const MyDataAnalyticsJourney = () => {
   ];
 
   return (
-    <section id="analytics" className="min-h-screen flex items-center bg-secondary relative py-32 border-t border-white/5 overflow-hidden">
+    <section id="analytics" className="min-h-screen flex items-center bg-secondary relative py-32 overflow-hidden">
       <div className="max-w-6xl mx-auto px-6 w-full relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 50 }}

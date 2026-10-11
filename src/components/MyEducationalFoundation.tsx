@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 const MyEducationalFoundation = () => {
   return (
-    <section id="foundation" className="min-h-[80vh] flex items-center bg-secondary relative py-32 border-t border-white/5">
+    <section id="foundation" className="min-h-[80vh] flex items-center bg-secondary relative py-32">
       <div className="max-w-5xl mx-auto px-6 w-full relative z-10 text-center">
         <motion.div
           initial={{ opacity: 0, y: 50 }}

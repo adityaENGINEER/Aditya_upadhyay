@@ -7,7 +7,7 @@ const FinalSignature = () => {
   };
 
   return (
-    <section className="h-screen flex flex-col items-center justify-center bg-black relative overflow-hidden border-t border-white/5">
+    <section className="h-screen flex flex-col items-center justify-center bg-black relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-t from-crimson/10 to-transparent pointer-events-none"></div>
 
       <div className="relative z-10 w-full px-6 flex flex-col items-center text-center">

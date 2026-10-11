@@ -6,7 +6,7 @@ const FifaDataAnalysis = () => {
   const project = projects[2]; // FIFA
 
   return (
-    <section id="project-fifa" className="min-h-screen flex items-center bg-secondary relative py-32 border-t border-white/5">
+    <section id="project-fifa" className="min-h-screen flex items-center bg-secondary relative py-32">
       <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           
