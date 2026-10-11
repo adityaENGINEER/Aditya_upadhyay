@@ -26,7 +26,7 @@ export const profile = {
     github: "https://github.com/adityaENGINEER",
     linkedin: "https://www.linkedin.com/in/adityaupadhyaycse/",
     instagram: "", // Configurable placeholder
-    email: "" // Configurable placeholder
+    email: "adityaupadhya909@gmail.com"
   },
   about: {
     headline: "Beyond the Code.",

@@ -79,45 +79,67 @@ const Contact = () => {
       return;
     }
 
-    // 4. Check for EmailJS configuration
+    // 4. Delivery mechanism (Direct to email with EmailJS fallback)
     const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
     const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
     const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
-    if (!serviceId || !templateId || !publicKey) {
-      setStatus('error');
-      setErrorMessage(
-        'Email service is not yet configured. Please set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, and VITE_EMAILJS_PUBLIC_KEY in your environment.'
-      );
-      return;
-    }
+    const receiverEmail = import.meta.env.VITE_CONTACT_RECEIVER_EMAIL || profile.social.email || 'adityaupadhya909@gmail.com';
 
     setStatus('submitting');
     setErrorMessage('');
     lastSubmitTime.current = now;
 
     try {
-      const templateParams = {
-        from_name: trimmedName,
-        from_email: trimmedEmail,
-        subject: trimmedSubject || 'New Portfolio Contact Submission',
-        message: trimmedMessage,
-        sent_at: new Date().toLocaleString(),
-      };
+      const sentTime = new Date().toLocaleString();
 
-      await emailjs.send(serviceId, templateId, templateParams, publicKey);
+      if (serviceId && templateId && publicKey) {
+        // Option A: Use EmailJS if configured
+        const templateParams = {
+          from_name: trimmedName,
+          from_email: trimmedEmail,
+          subject: trimmedSubject || `New Portfolio Contact Submission from ${trimmedName}`,
+          message: trimmedMessage,
+          sent_at: sentTime,
+          to_email: receiverEmail,
+        };
+        await emailjs.send(serviceId, templateId, templateParams, publicKey);
+      } else {
+        // Option B: Direct secure AJAX delivery to recipient inbox
+        const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(receiverEmail)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            name: trimmedName,
+            email: trimmedEmail,
+            _replyto: trimmedEmail,
+            _subject: trimmedSubject ? `[Portfolio] ${trimmedSubject}` : `[Portfolio] New message from ${trimmedName}`,
+            message: trimmedMessage,
+            sent_at: sentTime,
+            _template: 'table',
+            _captcha: 'false',
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok || data.success === 'false') {
+          throw new Error(data.message || 'Form submission failed');
+        }
+      }
 
       setStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '', honeypot: '' });
 
-      // Automatically reset status back to idle after 6 seconds
+      // Reset success status back to idle after 6 seconds
       setTimeout(() => {
         setStatus('idle');
       }, 6000);
     } catch (err: unknown) {
       console.error('Email delivery error:', err);
       setStatus('error');
-      setErrorMessage('Failed to send message. Please try again later or reach out directly via LinkedIn/GitHub.');
+      setErrorMessage('Failed to deliver message. Please try again or reach out directly at ' + receiverEmail);
     }
   };
 
@@ -294,7 +316,7 @@ const Contact = () => {
                   <div>
                     <p className="font-medium">Message sent successfully!</p>
                     <p className="text-xs text-green-400/80 mt-0.5">
-                      Thank you for reaching out. Your message has been delivered to my inbox and I will get back to you soon.
+                      Thank you for reaching out! Your message has been sent and will arrive directly in my inbox at adityaupadhya909@gmail.com.
                     </p>
                   </div>
                 </div>
