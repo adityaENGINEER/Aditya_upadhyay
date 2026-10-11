@@ -1,8 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Send, Info } from 'lucide-react';
 import { FiGithub, FiLinkedin } from 'react-icons/fi';
-import emailjs from '@emailjs/browser';
 import { profile } from '../data/profile';
 
 const Contact = () => {
@@ -11,136 +10,17 @@ const Contact = () => {
     email: '',
     subject: '',
     message: '',
-    honeypot: '', // anti-spam bot trap
   });
 
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const lastSubmitTime = useRef<number>(0);
-
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  };
+  const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    if (status === 'error') {
-      setStatus('idle');
-      setErrorMessage('');
-    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // 1. Anti-spam honeypot check
-    if (formData.honeypot) {
-      console.warn('Bot detected via honeypot.');
-      setStatus('error');
-      setErrorMessage('Submission rejected.');
-      return;
-    }
-
-    // 2. Prevent rapid consecutive submissions (5-second throttle)
-    const now = Date.now();
-    if (now - lastSubmitTime.current < 5000) {
-      setStatus('error');
-      setErrorMessage('Please wait a few seconds before sending another message.');
-      return;
-    }
-
-    // 3. Field validations
-    const trimmedName = formData.name.trim();
-    const trimmedEmail = formData.email.trim();
-    const trimmedSubject = formData.subject.trim();
-    const trimmedMessage = formData.message.trim();
-
-    if (!trimmedName || trimmedName.length < 2) {
-      setStatus('error');
-      setErrorMessage('Please enter your full name (at least 2 characters).');
-      return;
-    }
-
-    if (!trimmedEmail || !validateEmail(trimmedEmail)) {
-      setStatus('error');
-      setErrorMessage('Please enter a valid email address.');
-      return;
-    }
-
-    if (!trimmedMessage || trimmedMessage.length < 10) {
-      setStatus('error');
-      setErrorMessage('Please enter a message of at least 10 characters.');
-      return;
-    }
-
-    if (trimmedMessage.length > 2500) {
-      setStatus('error');
-      setErrorMessage('Message exceeds the maximum limit of 2500 characters.');
-      return;
-    }
-
-    // 4. Delivery mechanism (Direct to email with EmailJS fallback)
-    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-    const receiverEmail = import.meta.env.VITE_CONTACT_RECEIVER_EMAIL || profile.social.email || 'adityaupadhya909@gmail.com';
-
-    setStatus('submitting');
-    setErrorMessage('');
-    lastSubmitTime.current = now;
-
-    try {
-      const sentTime = new Date().toLocaleString();
-
-      if (serviceId && templateId && publicKey) {
-        // Option A: Use EmailJS if configured
-        const templateParams = {
-          from_name: trimmedName,
-          from_email: trimmedEmail,
-          subject: trimmedSubject || `New Portfolio Contact Submission from ${trimmedName}`,
-          message: trimmedMessage,
-          sent_at: sentTime,
-          to_email: receiverEmail,
-        };
-        await emailjs.send(serviceId, templateId, templateParams, publicKey);
-      } else {
-        // Option B: Direct secure AJAX delivery to recipient inbox
-        const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(receiverEmail)}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            name: trimmedName,
-            email: trimmedEmail,
-            _replyto: trimmedEmail,
-            _subject: trimmedSubject ? `[Portfolio] ${trimmedSubject}` : `[Portfolio] New message from ${trimmedName}`,
-            message: trimmedMessage,
-            sent_at: sentTime,
-            _template: 'table',
-            _captcha: 'false',
-          }),
-        });
-
-        const data = await response.json();
-        if (!response.ok || data.success === 'false') {
-          throw new Error(data.message || 'Form submission failed');
-        }
-      }
-
-      setStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '', honeypot: '' });
-
-      // Reset success status back to idle after 6 seconds
-      setTimeout(() => {
-        setStatus('idle');
-      }, 6000);
-    } catch (err: unknown) {
-      console.error('Email delivery error:', err);
-      setStatus('error');
-      setErrorMessage('Failed to deliver message. Please try again or reach out directly at ' + receiverEmail);
-    }
+    setSubmitted(true);
   };
 
   return (
@@ -219,52 +99,36 @@ const Contact = () => {
           >
             <h3 className="text-2xl font-display font-semibold mb-8 text-softwhite">Send a Message</h3>
             
-            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-              {/* Honeypot field hidden from users for bot spam protection */}
-              <input
-                type="text"
-                name="honeypot"
-                value={formData.honeypot}
-                onChange={handleChange}
-                style={{ display: 'none' }}
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-              />
-
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label htmlFor="name" className="text-sm font-medium text-muted">
-                    Full Name <span className="text-crimson">*</span>
+                    Full Name
                   </label>
                   <input
                     type="text"
                     id="name"
                     name="name"
                     required
-                    maxLength={100}
                     placeholder="Aditya Upadhyay"
                     value={formData.name}
                     onChange={handleChange}
-                    disabled={status === 'submitting'}
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-softwhite placeholder:text-muted/40 focus:outline-none focus:border-crimson transition-colors disabled:opacity-50"
+                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-softwhite placeholder:text-muted/40 focus:outline-none focus:border-crimson transition-colors"
                   />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium text-muted">
-                    Email Address <span className="text-crimson">*</span>
+                    Email Address
                   </label>
                   <input
                     type="email"
                     id="email"
                     name="email"
                     required
-                    maxLength={120}
                     placeholder="your.email@example.com"
                     value={formData.email}
                     onChange={handleChange}
-                    disabled={status === 'submitting'}
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-softwhite placeholder:text-muted/40 focus:outline-none focus:border-crimson transition-colors disabled:opacity-50"
+                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-softwhite placeholder:text-muted/40 focus:outline-none focus:border-crimson transition-colors"
                   />
                 </div>
               </div>
@@ -277,82 +141,47 @@ const Contact = () => {
                   type="text"
                   id="subject"
                   name="subject"
-                  maxLength={150}
                   placeholder="Project Collaboration / Inquiries"
                   value={formData.subject}
                   onChange={handleChange}
-                  disabled={status === 'submitting'}
-                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-softwhite placeholder:text-muted/40 focus:outline-none focus:border-crimson transition-colors disabled:opacity-50"
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-softwhite placeholder:text-muted/40 focus:outline-none focus:border-crimson transition-colors"
                 />
               </div>
               
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="message" className="text-sm font-medium text-muted">
-                    Message <span className="text-crimson">*</span>
-                  </label>
-                  <span className="text-xs text-muted/60">
-                    {formData.message.length}/2500
-                  </span>
-                </div>
+                <label htmlFor="message" className="text-sm font-medium text-muted">
+                  Message
+                </label>
                 <textarea
                   id="message"
                   name="message"
                   required
                   rows={5}
-                  maxLength={2500}
                   placeholder="Tell me about your idea, proposal, or inquiry..."
                   value={formData.message}
                   onChange={handleChange}
-                  disabled={status === 'submitting'}
-                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-softwhite placeholder:text-muted/40 focus:outline-none focus:border-crimson transition-colors resize-none disabled:opacity-50"
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-softwhite placeholder:text-muted/40 focus:outline-none focus:border-crimson transition-colors resize-none"
                 ></textarea>
               </div>
 
-              {/* Status alerts */}
-              {status === 'success' && (
-                <div className="flex items-start space-x-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
-                  <CheckCircle size={18} className="shrink-0 mt-0.5" />
+              {submitted && (
+                <div className="flex items-start space-x-3 p-4 bg-white/5 border border-white/10 rounded-lg text-muted text-sm">
+                  <Info size={18} className="shrink-0 mt-0.5 text-crimson" />
                   <div>
-                    <p className="font-medium">Message sent successfully!</p>
-                    <p className="text-xs text-green-400/80 mt-0.5">
-                      Thank you for reaching out! Your message has been sent and will arrive directly in my inbox at adityaupadhya909@gmail.com.
+                    <p className="font-medium text-softwhite">Direct form submission is currently inactive</p>
+                    <p className="text-xs text-muted mt-1 leading-relaxed">
+                      Message delivery via this form is currently unavailable. Please connect with me directly using the LinkedIn, GitHub, or Email options on the left.
                     </p>
-                  </div>
-                </div>
-              )}
-
-              {status === 'error' && errorMessage && (
-                <div className="flex items-start space-x-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                  <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Unable to send message</p>
-                    <p className="text-xs text-red-400/80 mt-0.5">{errorMessage}</p>
                   </div>
                 </div>
               )}
               
               <button
                 type="submit"
-                disabled={status === 'submitting'}
-                className="w-full bg-crimson hover:bg-deepred text-white font-medium tracking-wide py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
+                className="w-full bg-crimson hover:bg-deepred text-white font-medium tracking-wide py-4 rounded-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer"
               >
-                {status === 'submitting' ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    <span>Sending...</span>
-                  </>
-                ) : status === 'success' ? (
-                  <>
-                    <CheckCircle size={20} />
-                    <span>Message Sent!</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Send Message</span>
-                    <Send size={18} />
-                  </>
-                )}
+                <span>Send Message</span>
+                <Send size={18} />
               </button>
             </form>
           </motion.div>
